@@ -1,0 +1,51 @@
+version: '3.5'
+
+services:
+
+  filebeat:
+    container_name: syslog_filebeat
+    env_file:
+      - .env
+    image: docker.elastic.co/beats/filebeat:${ELK_VERSION}
+    user: root
+    command: bash -c 'cd /usr/share/filebeat && rm filebeat.yml && cp filebeat-volume/config/filebeat.yml . && ./filebeat -e -c filebeat.yml -d "*"'
+    volumes:
+      - ./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat-volume/config/filebeat.yml
+      - ./filebeat/data:/usr/share/filebeat/data
+      - /var/log/syslog:/usr/share/filebeat/filebeat-volume/data/syslog
+
+  elasticsearch:
+    container_name: syslog_elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELK_VERSION}
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
+    volumes:
+      - ./elasticsearch/data/:/usr/share/elasticsearch/data/
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+
+  logstash:
+    container_name: syslog_logstash
+    image: docker.elastic.co/logstash/logstash:${ELK_VERSION}
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logstash/config/pipelines.yml:/usr/share/logstash/config/pipelines.yml
+      - ./logstash/pipeline/:/usr/share/logstash/pipeline/
+      - ./logstash/data/:/usr/share/logstash/data/
+  
+  kibana:
+    container_name: syslog_kibana
+    image: docker.elastic.co/kibana/kibana:${ELK_VERSION}
+    depends_on:
+      - logstash
+    ports:
+      - "5601:5601"
+    volumes:
+      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
+      - ./kibana/data/:/usr/share/kibana/data/

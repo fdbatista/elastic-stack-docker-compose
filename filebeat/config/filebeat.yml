@@ -1,0 +1,15 @@
+filebeat.inputs:
+
+- type: log
+  enabled: true
+  clean_removed: true
+  scan_frequency: 5s
+  paths:
+    - ${PWD}/filebeat-volume/data/syslog
+  fields:
+    log_from: syslog
+
+output.logstash:
+  enabled: true
+  hosts: ["logstash:5044"]
+  compression_level: 5

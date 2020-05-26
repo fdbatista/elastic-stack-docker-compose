@@ -1,0 +1,6 @@
+/elasticsearch/data/
+/filebeat/data/
+/kibana/data/
+/logstash/data/
+/logstash/pipeline/
+
